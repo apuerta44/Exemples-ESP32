@@ -1,0 +1,64 @@
+// CONST: el valor no canviarà mai
+const int LED_PIN = 2;               // Pin GPIO on està connectat el LED
+
+// VARIABLES GLOBALS (declarades fora de setup i loop)
+int contador = 0;                    // INT: enter amb signe
+long tempsEspera = 500;              // LONG: enter gran, ideal per a temps en mil·lisegons
+float temperatura = 23.5;            // FLOAT: número amb decimals 
+char lletra = 'A';                   // CHAR: un sol caràcter, es posa entre cometes simples
+bool encendido = true;               // BOOL: només pot ser true o false
+unsigned int comptadorPositiu = 0;   // UNSIGNED INT: enter només positiu ens dona un rang més gran de numeros
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);          // Configurem el pin del LED com a sortida
+  Serial.begin(115200);              // Velocitat del Monitor Sèrie (ha de coincidir)
+
+  Serial.println("=== Exemples de tipus de variables ===");
+  Serial.print("LED_PIN (const int): ");
+  Serial.println(LED_PIN);
+}
+
+void loop() {
+  // VARIABLE LOCAL: només existeix dins del loop
+  int lectura = contador * 2;        // Càlcul simple amb una variable local
+
+  // Mostrem els valors de les variables pel Monitor Sèrie
+  Serial.println("------------------------------");
+  Serial.print("contador (int): ");
+  Serial.println(contador);
+
+  Serial.print("tempsEspera (long): ");
+  Serial.println(tempsEspera);
+
+  Serial.print("temperatura (float): ");
+  Serial.println(temperatura);
+
+  Serial.print("lletra (char): ");
+  Serial.println(lletra);
+
+  Serial.print("encendido (bool): ");
+  Serial.println(encendido ? "true" : "false");
+
+  Serial.print("comptadorPositiu (unsigned int): ");
+  Serial.println(comptadorPositiu);
+
+  Serial.print("lectura (variable local): ");
+  Serial.println(lectura);
+
+  // Modifiquem les variables
+  contador++;                        // Incrementa en 1
+  comptadorPositiu += 2;             // Suma 2
+  temperatura += 0.5;                // Simulem un canvi de temperatura
+  encendido = !encendido;            // Invertim el valor del bool (true <-> false)
+
+  // Fem parpadejar el LED segons el valor del bool
+  digitalWrite(LED_PIN, encendido ? HIGH : LOW);
+
+  // Usem la variable tempsEspera per a l'espera
+  delay(tempsEspera);
+
+  // Cada 5 iteracions augmentem el temps d'espera
+  if (contador % 5 == 0) {
+    tempsEspera += 500;
+  }
+}
