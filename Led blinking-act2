@@ -1,0 +1,29 @@
+// CONST: el pin del LED no canviarà mai
+const int LED_PIN = 23;
+
+// VARIABLES CONFIGURABLES (en mil·lisegons)
+long tempsEncesa = 1000;   // Temps que el LED està encès (1 segon)
+long tempsApagat = 500;    // Temps que el LED està apagat (0.5 segons)
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);   // Configurem el pin del LED com a SORTIDA
+  Serial.begin(115200);       // Iniciem el Monitor Sèrie (ha de coincidir la velocitat)
+  Serial.println("Blink configurable inicialitzat!");
+}
+
+void loop() {
+  // LED encès durant el temps definit a tempsEncesa
+  digitalWrite(LED_PIN, HIGH);
+  Serial.print("LED ENCÈS durant (ms): ");
+  Serial.println(tempsEncesa);
+  delay(tempsEncesa);
+
+  // LED apagat durant el temps definit a tempsApagat
+  digitalWrite(LED_PIN, LOW);
+  Serial.print("LED APAGAT durant (ms): ");
+  Serial.println(tempsApagat);
+  delay(tempsApagat);
+
+  // Per canviar el parpelleig només cal modificar els valors de dalt,
+  // sense tocar cap línia de delay().
+}
