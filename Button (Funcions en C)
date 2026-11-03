@@ -1,0 +1,30 @@
+
+const int boton = 4;  // Pin GPIO 4
+int contador = 0;
+int estadoBoton = HIGH;
+int estadoAnterior = HIGH;
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(boton, INPUT_PULLUP);
+
+  Serial.println("Contador de pulsaciones iniciado");
+  Serial.println("Pulsa el boton para sumar");
+}
+
+void loop() {
+  estadoBoton = digitalRead(boton);
+
+  // Detectar cuando se pulsa el boton
+  if (estadoBoton == LOW && estadoAnterior == HIGH) {
+    contador++;
+
+    Serial.print("Numero de pulsaciones: ");
+    Serial.println(contador);
+
+    delay(50); // Evitar rebotes del boton
+  }
+
+  estadoAnterior = estadoBoton;
+}
