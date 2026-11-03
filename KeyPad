@@ -1,9 +1,11 @@
 
-#include <Keypad.h>
+#include <Keypad.h> // Libreria para utilizar el teclado matricial
 
+// Definimos el numero de filas y columnas del teclado
 const byte FILAS = 4;
 const byte COLUMNAS = 4;
 
+// Definimos las teclas que tiene el teclado
 char teclas[FILAS][COLUMNAS] = {
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
@@ -11,10 +13,11 @@ char teclas[FILAS][COLUMNAS] = {
   {'*', '0', '#', 'D'}
 };
 
-// Pines del ESP32
+// Pines del ESP32 conectados a las filas y columnas
 byte pinesFilas[FILAS] = {23, 22, 21, 19};
 byte pinesColumnas[COLUMNAS] = {18, 5, 17, 16};
 
+// Creamos el objeto teclado con su configuracion
 Keypad teclado = Keypad(
   makeKeymap(teclas),
   pinesFilas,
@@ -23,38 +26,56 @@ Keypad teclado = Keypad(
   COLUMNAS
 );
 
+// Guardamos la contraseña correcta
 String passwordCorrecto = "1234";
+
+// Variable donde guardamos la contraseña introducida
 String passwordIntroducido = "";
 
 void setup() {
+  // Iniciamos la comunicacion serie a 115200 baudios
   Serial.begin(115200);
+
+  // Mostramos un mensaje inicial
   Serial.println("SISTEMA DE CONTRASENYA");
   Serial.println("Introdueix el password:");
 }
 
 void loop() {
+  // Leemos la tecla que se ha pulsado
   char tecla = teclado.getKey();
 
+  // Comprobamos si se ha pulsado alguna tecla
   if (tecla) {
 
+    // Si pulsamos #, comprobamos la contraseña
     if (tecla == '#') {
+
+      // Comparamos la contraseña introducida con la correcta
       if (passwordIntroducido == passwordCorrecto) {
         Serial.println("Acces PERMES!");
       } else {
         Serial.println("Contrasenya incorrecta!");
       }
 
+      // Vaciamos la contraseña para volver a empezar
       passwordIntroducido = "";
+
+      // Pedimos introducir una nueva contraseña
       Serial.println("Introdueix el password:");
     }
 
+    // Si pulsamos *, borramos la contraseña introducida
     else if (tecla == '*') {
       passwordIntroducido = "";
       Serial.println("Contrasenya esborrada");
     }
 
+    // Si no hemos llegado a 4 caracteres, guardamos la tecla
     else if (passwordIntroducido.length() < 4) {
       passwordIntroducido += tecla;
+
+      // Mostramos un asterisco en lugar del numero introducido
       Serial.print("*");
     }
   }
