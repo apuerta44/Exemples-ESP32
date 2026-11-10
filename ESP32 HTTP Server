@@ -1,0 +1,142 @@
+/* ESP32 Web Server con botón "Apagar todo"
+   Permite encender y apagar dos LED desde el navegador.
+
+   Para abrir la página en el navegador se necesita el IoT Gateway de Wokwi
+   (requiere Wokwi Club). Sin Club, prueba primero el programa de WiFi sencillo.
+*/
+
+// Librerías para WiFi y para crear el servidor web
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <uri/UriBraces.h>  // Permite rutas con parámetros, como /toggle/1
+
+// Credenciales de la red WiFi. Wokwi-GUEST es una red simulada sin contraseña
+#define WIFI_SSID "Wokwi-GUEST"
+#define WIFI_PASSWORD ""
+// Canal WiFi fijo: acelera la conexión (no es obligatorio)
+#define WIFI_CHANNEL 6
+
+// Servidor web en el puerto 80 (puerto HTTP estándar)
+WebServer server(80);
+
+// Pines GPIO donde están conectados los LED
+const int LED1 = 26;
+const int LED2 = 27;
+
+// Estado de cada LED (true = encendido, false = apagado)
+bool led1State = false;
+bool led2State = false;
+
+// Genera la página HTML y la envía al navegador
+void sendHtml() {
+  // R"(...)" es un string "raw": permite escribir HTML en varias líneas sin escapar comillas
+  String response = R"(
+    <!DOCTYPE html><html>
+      <head>
+        <title>ESP32 Web Server Demo</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          /* Estilos: texto centrado y botones grandes */
+          html { font-family: sans-serif; text-align: center; }
+          body { display: inline-flex; flex-direction: column; }
+          h1 { margin-bottom: 1.2em; }
+          h2 { margin: 0; }
+          div { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; grid-auto-flow: column; grid-gap: 1em; }
+          .btn { background-color: #5B5; border: none; color: #fff; padding: 0.5em 1em;
+                 font-size: 2em; text-decoration: none }
+          .btn.OFF { background-color: #333; }  /* Botón gris cuando está apagado */
+        </style>
+      </head>
+
+      <body>
+        <h1>ESP32 Web Server</h1>
+
+        <div>
+          <h2>LED 1</h2>
+          <!-- Al pulsar, el navegador pide /toggle/1 -->
+          <a href="/toggle/1" class="btn LED1_TEXT">LED1_TEXT</a>
+          <h2>LED 2</h2>
+          <!-- Al pulsar, el navegador pide /toggle/2 -->
+          <a href="/toggle/2" class="btn LED2_TEXT">LED2_TEXT</a>
+        </div>
+
+        <!-- NUEVO: botón que apaga los dos LED. Pide la ruta /off -->
+        <p><a href="/off" class="btn OFF">Apagar todo</a></p>
+      </body>
+    </html>
+  )";
+  // Sustituimos los marcadores por ON/OFF según el estado actual de cada LED
+  // (el operador ? : funciona como "si... entonces... si no...")
+  response.replace("LED1_TEXT", led1State ? "ON" : "OFF");
+  response.replace("LED2_TEXT", led2State ? "ON" : "OFF");
+  // Código 200 (OK), tipo de contenido HTML y la página completa
+  server.send(200, "text/html", response);
+}
+
+// NUEVO: apaga los dos LED y vuelve a mostrar la página
+void apagarTodo() {
+  led1State = false;             // Actualizamos el estado guardado
+  led2State = false;
+  digitalWrite(LED1, LOW);       // Apagamos los pines físicos
+  digitalWrite(LED2, LOW);
+  Serial.println("Todos los LED apagados");
+  sendHtml();                    // Enviamos la página con los botones actualizados
+}
+
+// setup() se ejecuta una sola vez al arrancar el ESP32
+void setup(void) {
+  Serial.begin(115200);          // Iniciamos el monitor serie
+  pinMode(LED1, OUTPUT);         // Los pines de los LED son salidas
+  pinMode(LED2, OUTPUT);
+
+  // Conectamos a la red WiFi
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD, WIFI_CHANNEL);
+  Serial.print("Connecting to WiFi ");
+  Serial.print(WIFI_SSID);
+  // Esperamos hasta conectarnos, comprobando cada 100 ms
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
+  Serial.println(" Connected!");
+
+  // Mostramos la IP asignada. La necesitamos para entrar desde el navegador
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Rutas del servidor: a cada URL le asignamos la función que la atiende
+  server.on("/", sendHtml);                 // Página principal
+  server.on("/off", apagarTodo);            // NUEVO: botón "Apagar todo"
+
+  // Ruta con parámetro: {} recoge el número (1 o 2) con pathArg(0)
+  server.on(UriBraces("/toggle/{}"), []() {
+    String led = server.pathArg(0);         // Leemos el número desde la URL
+    Serial.print("Toggle LED #");
+    Serial.println(led);
+
+    // Según el número, invertimos el estado del LED correspondiente
+    switch (led.toInt()) {
+      case 1:
+        led1State = !led1State;             // Encendido <-> apagado
+        digitalWrite(LED1, led1State);
+        break;
+      case 2:
+        led2State = !led2State;
+        digitalWrite(LED2, led2State);
+        break;
+    }
+
+    sendHtml();                             // Mostramos la página con el nuevo estado
+  });
+
+  // Arrancamos el servidor web
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+// loop() se repite continuamente mientras el ESP32 esté encendido
+void loop(void) {
+  server.handleClient();  // Atiende las peticiones HTTP que lleguen
+  delay(2);               // Pausa corta para no saturar el procesador
+}
